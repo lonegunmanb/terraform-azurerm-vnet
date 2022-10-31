@@ -20,6 +20,10 @@ jobs:
       - name: pr-check
         run: |
           docker run --rm -v $(pwd):/src -w /src -e SKIP_CHECKOV -e TFLINT_CONFIG=.tflint_alt.hcl mcr.microsoft.com/azterraform:latest make pr-check
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: go
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
         with:
