@@ -13,6 +13,11 @@ jobs:
         uses: actions/checkout@v3
       - uses: 8BitJonny/gh-get-current-pr@2.1.0
         id: PR
+      - uses: actions-ecosystem/action-get-latest-tag@v1
+        id: get-latest-tag
+        with:
+          semver_only: true
+          initial_version: 0.0.0
       - name: update-changelog
         if: steps.PR.outputs.number != ''
         run: |
@@ -22,7 +27,9 @@ jobs:
           fi
           MAJOR_VERSION=${MAJOR_VERSION#"v"}
           MAJOR_VERSION=$((MAJOR_VERSION+1))
-          docker run --rm -v $(pwd):/src -w /src githubchangeloggenerator/github-changelog-generator -u ${{ github.repository_owner }} -p ${{ github.event.repository.name }} -t ${{ secrets.GITHUB_TOKEN }} --no-issues --no-compare-link --since-tag $MAJOR_VERSION.0.0
+          docker run --rm -v $(pwd):/src -w /src githubchangeloggenerator/github-changelog-generator -u ${{ github.repository_owner }} -p ${{ github.event.repository.name }} -t ${{ secrets.GITHUB_TOKEN }} --no-issues --no-compare-link --since-tag $MAJOR_VERSION.0.0 || \
+          # in case we just rotate the CHANGELOG.md file, the estimated version could be like "v3.0.0", but it doesn't exist yet so our first try will fail, in this case we just use the latest tag
+            docker run --rm -v $(pwd):/src -w /src githubchangeloggenerator/github-changelog-generator -u ${{ github.repository_owner }} -p ${{ github.event.repository.name }} -t ${{ secrets.GITHUB_TOKEN }} --no-issues --no-compare-link --since-tag ${{ steps.get-latest-tag.outputs.tag }}
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: Update Changelog
