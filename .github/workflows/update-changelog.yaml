@@ -27,9 +27,9 @@ jobs:
           fi
           MAJOR_VERSION=${MAJOR_VERSION#"v"}
           MAJOR_VERSION=$((MAJOR_VERSION+1))
-          docker run --rm -v $(pwd):/src -w /src githubchangeloggenerator/github-changelog-generator -u ${{ github.repository_owner }} -p ${{ github.event.repository.name }} -t ${{ secrets.GITHUB_TOKEN }} --no-issues --no-compare-link --since-tag $MAJOR_VERSION.0.0 || \
-          # in case we just rotate the CHANGELOG.md file, the estimated version could be like "v3.0.0", but it doesn't exist yet so our first try will fail, in this case we just use the latest tag
-            docker run --rm -v $(pwd):/src -w /src githubchangeloggenerator/github-changelog-generator -u ${{ github.repository_owner }} -p ${{ github.event.repository.name }} -t ${{ secrets.GITHUB_TOKEN }} --no-issues --no-compare-link --since-tag ${{ steps.get-latest-tag.outputs.tag }}
+          # if latest tag is 2.6.0 and current unreleased major version is 3.0.0, use 2.6.0; if current major version is 2.0.0 and latest tag is 2.6.0, use 2.0.0
+          VERSION=$(printf '$MAJOR_VERSION.0.0\n${{ steps.get-latest-tag.outputs.tag }}\n' | sort -V | head -n 1)
+          docker run --rm -v $(pwd):/src -w /src githubchangeloggenerator/github-changelog-generator -u ${{ github.repository_owner }} -p ${{ github.event.repository.name }} -t ${{ secrets.GITHUB_TOKEN }} --no-issues --no-compare-link --since-tag $VERSION
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: Update Changelog
